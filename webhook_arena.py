@@ -48,6 +48,7 @@ def request_token():
         if response.status_code == 200:
             response_json = response.json()
             api_token = response_json['access_token']
+            print(api_token)
             expired_token = datetime.datetime.now() + datetime.timedelta(seconds=response_json['expires_in'])
 
 def get_fight_data():
@@ -69,17 +70,15 @@ def get_fight_data():
         sorted_fights = sorted(fight_data['fights'], key=lambda fight: int(fight['fightNumber']))
         ref.set(sorted_fights)
 
+from flask import Flask, request
 
+app = Flask(__name__)
 
-for i in range(2):
+@app.route('/webhook', methods=['POST'])
+def webhook():
     request_token()
-
-    start_time = time.time()
-
     get_fight_data()
+    return 'Success', 200
 
-    end_time = time.time()
-
-    execution_time = end_time - start_time
-    print(f"Execution time: {execution_time} seconds")
-    time.sleep(60)
+if __name__ == '__main__':
+    app.run(port=5000)
