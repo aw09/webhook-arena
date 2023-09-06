@@ -6,7 +6,7 @@ import os
 import pandas as pd
 from PyPDF2 import PdfMerger
 
-DOC_PATH = "/home/agung/Desktop/piagam.docx"
+DOC_PATH = "/home/agung/Desktop/piagam_sekolah.docx"
 temp_dir = "/home/agung/Desktop/temp/"
 os.makedirs(temp_dir, exist_ok=True)
 
@@ -32,13 +32,12 @@ def replace_text_in_element(element, replacements):
 pdf_merger = PdfMerger()
 
 # Read the CSV file into a DataFrame
-df = pd.read_csv("data.csv")
+df = pd.read_csv("data-sekolah.csv")
 
 # Loop through each row in the DataFrame
 for index, row in df.iterrows():
     replacements = {
         'TES_NAMA': row['Name'].upper(),
-        'TES_SEKOLAH': row['School'].upper(),
         'TES_SEBAGAI': row['Role'].upper()
     }
 
@@ -48,13 +47,13 @@ for index, row in df.iterrows():
     replace_text_in_xml(doc, replacements)
     
 
-    edited_doc_path = os.path.join(temp_dir, f"temp_{index}.docx")
+    edited_doc_path = os.path.join(temp_dir, f"temp_sekolah_{index}.docx")
     doc.save(edited_doc_path)
 
-    pdf_path = os.path.join(temp_dir, f"temp_{index}.pdf")
+    pdf_path = os.path.join(temp_dir, f"temp_sekolah_{index}.pdf")
     convert_docx_to_pdf(edited_doc_path, pdf_path)
 
     pdf_merger.append(pdf_path)
 
-pdf_merger.write("merged.pdf")
+pdf_merger.write("merged_sekolah.pdf")
 pdf_merger.close()

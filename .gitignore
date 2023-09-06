@@ -1,2 +1,5 @@
 .vscode
 .env
+*_df.csv
+*.docx
+*.pdf
