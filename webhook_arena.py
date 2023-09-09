@@ -17,10 +17,22 @@ CLIENT_SECRET = os.getenv('CLIENT_SECRET')
 API_KEY = os.getenv('API_KEY')
 CRED_PATH = os.getenv('CRED_PATH')
 FIREBASE_URL = os.getenv('FIREBASE_URL')
-ADMIN_UID = os.getenv('ADMIN_UID')
 
 api_token = None
 expired_token = None
+
+selected_fight_keys = [
+    'fightNumber', 
+    'fighter1Id',
+    'fighter2Id',
+    'weightCategoryAlternateName',
+    'fighter1FullName',
+    'fighter2FullName',
+    'isCompleted',
+    'team1AlternateName',
+    'team2AlternateName',
+]
+
 
 # Initialize Firebase app
 cred = credentials.Certificate(CRED_PATH)
@@ -28,12 +40,6 @@ firebase_admin.initialize_app(cred, {
     'databaseURL': FIREBASE_URL
 })
 
-# Create a custom token with admin claims
-def create_custom_token():
-    additional_claims = {
-        "admin": True,
-    }   
-    return auth.create_custom_token(ADMIN_UID, additional_claims)
 
 # Request API Token from external service
 def request_token():
@@ -72,7 +78,8 @@ def get_fights():
         ref = db.reference('fights')
         
         sorted_fights = sorted(fights_data['fights'], key=lambda fight: int(fight['fightNumber']))
-        ref.set(sorted_fights)
+        filtered_sorted_fights = [{k: fight[k] for k in selected_fight_keys if k in fight} for fight in sorted_fights]
+        ref.set(filtered_sorted_fights)
 
         ranking = {}
         for fight in sorted_fights:
@@ -96,10 +103,11 @@ def get_fight(id):
     if response.status_code == 200:
         fight_data = response.json()
         fight = fight_data['fight']
+        filtered_fight = {k: fight[k] for k in selected_fight_keys if k in fight}
         fight_number = fight['fightNumber'] - 1
 
         ref = db.reference(f'fights/{fight_number}')
-        ref.set(fight)
+        ref.set(filtered_fight)
 
         if fight.get('weightCategoryCompleted', False):
             weight_category_id = fight.get('sportEventWeightCategoryId')
