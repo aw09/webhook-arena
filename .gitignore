@@ -1,5 +1,7 @@
 .vscode
 .env
+.python-version
 *_df.csv
 *.docx
 *.pdf
+*export.json
