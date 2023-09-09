@@ -8,6 +8,9 @@ from flask import Flask, request
 import time
 import os
 
+from dotenv import load_dotenv
+load_dotenv()
+
 # Define your variables
 _format = "json"
 BASE_URL = os.getenv('BASE_URL')
@@ -31,6 +34,8 @@ selected_fight_keys = [
     'isCompleted',
     'team1AlternateName',
     'team2AlternateName',
+    'round',
+    'sessionStartDate'
 ]
 
 
@@ -76,10 +81,13 @@ def get_fights():
         fights_data = response.json()
 
         ref = db.reference('fights')
+        refCompressed = db.reference('fightsCompressed')
         
         sorted_fights = sorted(fights_data['fights'], key=lambda fight: int(fight['fightNumber']))
         filtered_sorted_fights = [{k: fight[k] for k in selected_fight_keys if k in fight} for fight in sorted_fights]
-        ref.set(filtered_sorted_fights)
+        
+        ref.set(sorted_fights)
+        refCompressed.set(filtered_sorted_fights)
 
         ranking = {}
         for fight in sorted_fights:
@@ -92,6 +100,8 @@ def get_fights():
         
         refRanking = db.reference('ranking')
         refRanking.set(ranking)
+
+        last_update()
 
 def get_fight(id):
     fight_url = urljoin(BASE_URL, f"/api/{_format}/fight/get/{id}")
@@ -107,7 +117,9 @@ def get_fight(id):
         fight_number = fight['fightNumber'] - 1
 
         ref = db.reference(f'fights/{fight_number}')
-        ref.set(filtered_fight)
+        refCompressed = db.reference(f'fightsCompressed/{fight_number}')
+        ref.set(fight)
+        refCompressed.set(filtered_fight)
 
         if fight.get('weightCategoryCompleted', False):
             weight_category_id = fight.get('sportEventWeightCategoryId')
@@ -116,6 +128,13 @@ def get_fight(id):
             
             refRanking = db.reference(f'ranking/{weight_category_name}')
             refRanking.set(rank)
+        
+        last_update()
+
+def last_update():
+    last_updated = int(time.time())
+    ref = db.reference(f'lastUpdated')
+    ref.set(last_updated)
 
 def get_ranking(id):
     ranking_url = urljoin(BASE_URL, f"/api/{_format}/weight-category/get/{id}/ranking")
@@ -131,8 +150,8 @@ def get_ranking(id):
             ranking_list = list(ranking_data.values())
 
             sorted_rankings = sorted(ranking_list, key=lambda x: x['fighter']['rank'])
-
-            return sorted_rankings
+            rankings = sorted_rankings if len(sorted_rankings) > 0 else []
+            return rankings
 
 app = Flask(__name__)
 
